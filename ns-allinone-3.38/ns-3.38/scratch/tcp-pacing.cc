@@ -264,7 +264,7 @@ main(int argc, char* argv[])
 
     NS_LOG_INFO("Create Applications.");
 
-    // Two Sink Applications at n4 and n5
+    // Two Sink Applications at n4
     uint16_t sinkPort = 8080;
     Address sinkAddress4(
         InetSocketAddress(regLinkInterface4.GetAddress(1), sinkPort)); // interface of n4
