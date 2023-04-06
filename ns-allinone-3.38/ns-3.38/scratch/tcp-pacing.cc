@@ -21,19 +21,6 @@
 // The following network topology is used in this example, and is taken from
 // Figure 2 of https://homes.cs.washington.edu/~tom/pubs/pacing.pdf
 //
-//    n0                          n4
-//    |                           |
-//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
-//    |                           |
-//    |                           |
-//    |      (x Mbps, 40ms)       |
-//    n2 ------------------------ n3
-//    |                           |
-//    |                           |
-//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
-//    |                           |
-//    n1                          n5
-//
 //
 
 // This example illustrates how TCP pacing can be enabled on a socket.
