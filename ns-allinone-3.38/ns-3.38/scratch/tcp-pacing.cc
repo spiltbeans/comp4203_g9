@@ -221,18 +221,6 @@ main(int argc, char* argv[])
     NodeContainer n2n3 = NodeContainer(c.Get(1), c.Get(2));
     NodeContainer n3n4 = NodeContainer(c.Get(2), c.Get(3));
 
-//    n0                          n4
-//    |                           |
-//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
-//    |                           |
-//    |                           |
-//    |      (x Mbps, 40ms)       |
-//    n2 ------------------------ n3
-//    |                           |
-//    |                           |
-//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
-//    |                           |
-//    n1                          n5
 //
     // Define Node link properties
     PointToPointHelper regLink;
