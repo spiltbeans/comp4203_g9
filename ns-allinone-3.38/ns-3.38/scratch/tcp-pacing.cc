@@ -77,6 +77,18 @@
 #include "ns3/test.h"
 #include "ns3/ipv4-l3-protocol.h"
 
+#include "ns3/applications-module.h"
+#include "ns3/core-module.h"
+#include "ns3/flow-monitor-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/network-module.h"
+#include "ns3/packet-sink.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/traffic-control-module.h"
+#include "ns3/test.h"
+#include "ns3/ipv4-l3-protocol.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -90,8 +102,15 @@ std::ofstream cwndStream;
 std::ofstream pacingRateStream;
 std::ofstream ssThreshStream;
 std::ofstream packetTraceStream;
+std::ofstream rttStream;
 
-
+//added to log rtt times for packets
+static void
+RttTracer(Time oldval, Time newval)
+{
+    rttStream << std::fixed << std::setprecision(6) << Simulator::Now().GetSeconds()
+              << std::setw(12) << newval.GetSeconds() << std::endl;
+}
 
 static void
 CwndTracer(uint32_t oldval, uint32_t newval)
@@ -163,6 +182,7 @@ ConnectSocketTraces()
     Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Tx", MakeCallback(&NodeThreeOutput));
     Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Rx", MakeCallback(&NodeThreeInput));
    // Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Drop", MakeCallback(&NodeZeroDropped));
+   Config::ConnectWithoutContext("/NodeList/0/$ns3::TcpL4Protocol/SocketList/0/RTT",MakeCallback(&RttTracer));
 }
 
 int
@@ -221,6 +241,18 @@ main(int argc, char* argv[])
     NodeContainer n2n3 = NodeContainer(c.Get(1), c.Get(2));
     NodeContainer n3n4 = NodeContainer(c.Get(2), c.Get(3));
 
+//    n0                          n4
+//    |                           |
+//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
+//    |                           |
+//    |                           |
+//    |      (x Mbps, 40ms)       |
+//    n2 ------------------------ n3
+//    |                           |
+//    |                           |
+//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
+//    |                           |
+//    n1                          n5
 //
     // Define Node link properties
     PointToPointHelper regLink;
@@ -264,7 +296,7 @@ main(int argc, char* argv[])
 
     NS_LOG_INFO("Create Applications.");
 
-    // Two Sink Applications at n4
+    // Two Sink Applications at n4 and n5
     uint16_t sinkPort = 8080;
     Address sinkAddress4(
         InetSocketAddress(regLinkInterface4.GetAddress(1), sinkPort)); // interface of n4
@@ -295,6 +327,10 @@ main(int argc, char* argv[])
         regLink.EnablePcapAll("tcp-dynamic-pacing", false);
     }
 
+    //open Rtt stream file 
+    rttStream.open("tcp-dynamic-pacing-rtt.dat", std::ios::out);
+    rttStream << "#Time(s) RTT (s)" << std::endl;
+    
     cwndStream.open("tcp-dynamic-pacing-cwnd.dat", std::ios::out);
     cwndStream << "#Time(s) Congestion Window (B)" << std::endl;
 
@@ -341,7 +377,7 @@ main(int argc, char* argv[])
                   << " Mbps\n";
                   // flowMonitor->CheckForLostPackets(); try to implement this maybe ?? 
     }
-
+    rttStream.close();
     cwndStream.close();
     pacingRateStream.close();
     ssThreshStream.close();
