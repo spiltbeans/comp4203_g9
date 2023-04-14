@@ -76,18 +76,10 @@
 #include "ns3/traffic-control-module.h"
 #include "ns3/test.h"
 #include "ns3/ipv4-l3-protocol.h"
+#include "ns3/packet.h"
+#include "ns3/tag.h"
+#include "ns3/netanim-module.h"
 
-#include "ns3/applications-module.h"
-#include "ns3/core-module.h"
-#include "ns3/flow-monitor-module.h"
-#include "ns3/internet-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
-#include "ns3/network-module.h"
-#include "ns3/packet-sink.h"
-#include "ns3/point-to-point-module.h"
-#include "ns3/traffic-control-module.h"
-#include "ns3/test.h"
-#include "ns3/ipv4-l3-protocol.h"
 
 #include <fstream>
 #include <iomanip>
@@ -178,19 +170,22 @@ ConnectSocketTraces()
 
     Config::ConnectWithoutContext("/NodeList/0/$ns3::Ipv4L3Protocol/Tx", MakeCallback(&NodeZeroOutput));
     Config::ConnectWithoutContext("/NodeList/0/$ns3::Ipv4L3Protocol/Rx", MakeCallback(&NodeZeroInput));
-
     Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Tx", MakeCallback(&NodeThreeOutput));
     Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Rx", MakeCallback(&NodeThreeInput));
-   // Config::ConnectWithoutContext("/NodeList/3/$ns3::Ipv4L3Protocol/Drop", MakeCallback(&NodeZeroDropped));
-   Config::ConnectWithoutContext("/NodeList/0/$ns3::TcpL4Protocol/SocketList/0/RTT",MakeCallback(&RttTracer));
+    Config::ConnectWithoutContext("/NodeList/0/$ns3::TcpL4Protocol/SocketList/0/RTT",MakeCallback(&RttTracer));
 }
 
 int
 main(int argc, char* argv[])
 {
+    //Enable if you want to log packet information at a lower level
+    //LogComponentEnable("TcpCubic", LOG_LEVEL_WARN);
     bool tracing = false;
+    bool enableVis = false;
 
     uint32_t maxBytes = 0; // value of zero corresponds to unlimited send
+
+    //Change this to NewReno or Cubic depending on test case.
     std::string transportProtocol = "ns3::TcpCubic";
 
     Time simulationEndTime = Seconds(5);
@@ -222,6 +217,7 @@ main(int argc, char* argv[])
                  "Flag to enable/disable pacing of TCP initial window",
                  shouldPaceInitialWindow);
     cmd.AddValue("simulationEndTime", "Simulation end time", simulationEndTime);
+    cmd.AddValue("vis", "Enable visualization", enableVis);
     cmd.Parse(argc, argv);
 
     // Configure defaults based on command-line arguments
@@ -231,7 +227,7 @@ main(int argc, char* argv[])
     Config::SetDefault("ns3::TcpSocketBase::UseEcn",
                        (useEcn ? EnumValue(TcpSocketState::On) : EnumValue(TcpSocketState::Off)));
     Config::SetDefault("ns3::TcpSocketState::MaxPacingRate", DataRateValue(maxPacingRate));
-
+    Config::SetDefault ("ns3::TcpSocketBase::Timestamp", BooleanValue (true));
     NS_LOG_INFO("Create nodes.");
     NodeContainer c;
     c.Create(4);
@@ -248,12 +244,7 @@ main(int argc, char* argv[])
 //    |                           |
 //    |      (x Mbps, 40ms)       |
 //    n2 ------------------------ n3
-//    |                           |
-//    |                           |
-//    |(4x Mbps, 5ms)             |(4x Mbps, 5ms)
-//    |                           |
-//    n1                          n5
-//
+
     // Define Node link properties
     PointToPointHelper regLink;
     regLink.SetDeviceAttribute("DataRate", DataRateValue(regLinkBandwidth));
@@ -350,7 +341,14 @@ main(int argc, char* argv[])
 
     NS_LOG_INFO("Run Simulation.");
     Simulator::Stop(simulationEndTime);
+    if (enableVis){
+    AnimationInterface anim("your_animation_file.xml");
+    anim.EnablePacketMetadata(); // Optional, to display packet metadata
+    }
+
     Simulator::Run();
+    
+    
 
     //TimestampTestCase::DoRun()
 
