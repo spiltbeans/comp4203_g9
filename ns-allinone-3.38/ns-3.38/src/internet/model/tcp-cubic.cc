@@ -21,6 +21,8 @@
         std::clog << Simulator::Now().GetSeconds() << " ";                                         \
     }
 
+double staticOneWay = 0;
+
 #include "tcp-cubic.h"
 
 #include "ns3/log.h"
@@ -319,19 +321,26 @@ TcpCubic::Update(Ptr<TcpSocketState> tcb)
 void
 TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time& rtt)
 {
+
+    //logs packet level timings that are needed for out classifier.
     NS_LOG_FUNCTION(this << tcb << segmentsAcked << rtt);
     NS_LOG_WARN("rtt: " << rtt);
     NS_LOG_WARN("m_rcvTimestampValue: " << tcb->m_rcvTimestampValue);
     NS_LOG_WARN("m_rcvTimestampEchoReply: " << tcb->m_rcvTimestampEchoReply);
-    uint32_t value = tcb->m_rcvTimestampValue * 0xfbd1e995;
-    uint64_t value64 = value;
-    uint32_t echo = tcb->m_rcvTimestampEchoReply * 0xfbd1e995;
-    uint64_t echo64 = value;
-    uint32_t oneway = 1-((2*(echo64 - value64))/rtt.GetMilliSeconds());
-    if(oneway < 0 ){
-        oneway = oneway*-1;   
-    }
-    NS_LOG_WARN("oneway: " << oneway);                     
+    uint32_t value = tcb->m_rcvTimestampValue;
+
+    uint32_t echo = tcb->m_rcvTimestampEchoReply;
+
+    uint32_t measuredDelay = tcb->m_rcvTimestampValue - tcb->m_rcvTimestampEchoReply;
+    double delay = 2 * measuredDelay;
+    double rttms = rtt.GetMilliSeconds();
+    double temp = delay/rttms;
+    double normalval = 1 - temp;
+    double oneway = abs(normalval);
+    staticOneWay = oneway;
+
+    NS_LOG_WARN("oneway: " << oneway);
+
     /* Discard delay samples right after fast recovery */
     if (m_epochStart != Time::Min() && (Simulator::Now() - m_epochStart) < m_cubicDelta)
     {
@@ -458,11 +467,14 @@ void
 TcpCubic::CongestionStateSet(Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCongState_t newState)
 {
     NS_LOG_FUNCTION(this << tcb << newState);
+    if(staticOneWay> 0.14){
+
 
     if (newState == TcpSocketState::CA_LOSS)
     {
         CubicReset(tcb);
         HystartReset(tcb);
+    }
     }
 }
 
