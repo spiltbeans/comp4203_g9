@@ -320,9 +320,9 @@ void
 TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time& rtt)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked << rtt);
-    std::cout << "rtt: " << rtt << std::endl;
-    std::cout << "m_rcvTimestampValue : " << tcb->m_rcvTimestampValue << std::endl;
-    std::cout << "m_rcvTimestampEchoReply : " << tcb->m_rcvTimestampEchoReply << std::endl;
+    NS_LOG_WARN("rtt: " << rtt);
+    NS_LOG_WARN("m_rcvTimestampValue: " << tcb->m_rcvTimestampValue);
+    NS_LOG_WARN("m_rcvTimestampEchoReply: " << tcb->tcb->m_rcvTimestampEchoReply);
     /* Discard delay samples right after fast recovery */
     if (m_epochStart != Time::Min() && (Simulator::Now() - m_epochStart) < m_cubicDelta)
     {
