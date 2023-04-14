@@ -317,13 +317,17 @@ TcpCubic::Update(Ptr<TcpSocketState> tcb)
 }
 
 void
-TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const & rtt)
+TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time& rtt)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked << rtt);
     NS_LOG_WARN("rtt: " << rtt);
     NS_LOG_WARN("m_rcvTimestampValue: " << tcb->m_rcvTimestampValue);
     NS_LOG_WARN("m_rcvTimestampEchoReply: " << tcb->m_rcvTimestampEchoReply);
-    uint32_t oneway = 1-((2*(tcb->m_rcvTimestampEchoReply - tcb->m_rcvTimestampValue)/rtt.GetMilliSeconds());
+    uint32_t value = tcb->m_rcvTimestampValue * 0xfbd1e995;
+    uint64_t value64 = value;
+    uint32_t echo = tcb->m_rcvTimestampEchoReply * 0xfbd1e995;
+    uint64_t echo64 = value;
+    uint32_t oneway = 1-((2*(echo64 - value64))/rtt.GetMilliSeconds());
     if(oneway < 0 ){
         oneway = oneway*-1;   
     }
