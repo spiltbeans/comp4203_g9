@@ -317,12 +317,17 @@ TcpCubic::Update(Ptr<TcpSocketState> tcb)
 }
 
 void
-TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time& rtt)
+TcpCubic::PktsAcked(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const & rtt)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked << rtt);
     NS_LOG_WARN("rtt: " << rtt);
     NS_LOG_WARN("m_rcvTimestampValue: " << tcb->m_rcvTimestampValue);
-    NS_LOG_WARN("m_rcvTimestampEchoReply: " << tcb->tcb->m_rcvTimestampEchoReply);
+    NS_LOG_WARN("m_rcvTimestampEchoReply: " << tcb->m_rcvTimestampEchoReply);
+    uint32_t oneway = 1-((2*(tcb->m_rcvTimestampEchoReply - tcb->m_rcvTimestampValue)/rtt.GetMilliSeconds());
+    if(oneway < 0 ){
+        oneway = oneway*-1;   
+    }
+    NS_LOG_WARN("oneway: " << oneway);                     
     /* Discard delay samples right after fast recovery */
     if (m_epochStart != Time::Min() && (Simulator::Now() - m_epochStart) < m_cubicDelta)
     {
